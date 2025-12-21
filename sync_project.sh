@@ -1,3 +1,17 @@
+#!/bin/bash
+set -e
+
+echo "--- Resetting App-Jette Project Files ---"
+
+# 1. Create requirements.txt
+cat <<'INNER' > requirements.txt
+flask
+gunicorn
+google-genai
+INNER
+
+# 2. Create the professional main.py
+cat <<'INNER' > main.py
 import os
 import logging
 from flask import Flask, request, jsonify, render_template_string
@@ -106,3 +120,22 @@ def home():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+INNER
+
+# 3. Create .gitignore
+cat <<'INNER' > .gitignore
+venv/
+__pycache__/
+*.pyc
+.env
+INNER
+
+echo "--- Files Synced. Redeploying to Google Cloud ---"
+gcloud run deploy gemini-app --source . --region europe-west3 --quiet
+
+echo "--- Updating GitHub ---"
+git add .
+git commit -m "Complete project sync: Professional UI + Google GenAI SDK"
+git push origin main
+
+echo "--- DONE! Your app is live at the URL above ---"
