@@ -1,0 +1,553 @@
+chris@Framework-13:~/gcloud$ sudo rm -r gcloud
+[sudo] password for chris: 
+chris@Framework-13:~/gcloud$ touch #!/bin/bash
+
+# ============================================================================== 
+# Script Name: init_project.sh
+# Description: Automates new GCP project creation, billing linkage, and API setup.
+# Author: Gemini (for Framework 13 User)
+# Date: 2025-12-21
+# ============================================================================== 
+
+set -e
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${BLUE}=== Google Cloud Project Initializer ===${NC}"
+
+# 1. Generate a unique Project ID
+RANDOM_ID="gemini-app-$(date +%s)"
+echo -e "Proposed Project ID: ${GREEN}${RANDOM_ID}${NC}"
+read -p "Press Enter to accept this ID, or type your own (lowercase, no spaces):echo -e "${GREEN}[SUCCESS] Project $PROJECT_ID is ready for deployment!${NC}"^C_
+chris@Framework-13:~/gcloud$ touch init_project.sh
+chris@Framework-13:~/gcloud$ nano init_project.sh
+chris@Framework-13:~/gcloud$ chmod +ch init_project.sh 
+chmod: invalid mode: ‘+ch’
+Try 'chmod --help' for more information.
+chris@Framework-13:~/gcloud$ chmod +x init_project.sh 
+chris@Framework-13:~/gcloud$ ./init_project.sh 
+=== Google Cloud Project Initializer ===
+Proposed Project ID: gemini-app-1766297450
+Press Enter to accept this ID, or type your own (lowercase, no spaces): 
+[INFO] Creating project 'gemini-app-1766297450'...
+Create in progress for [https://cloudresourcemanager.googleapis.com/v1/projects/gemini-app-1766297450].
+Waiting for [operations/create_project.global.4962441317398929681] to finish...
+done.                                                                          
+Enabling service [cloudapis.googleapis.com] on project [gemini-app-1766297450]...
+Operation "operations/acat.p2-1057191446230-8056f066-cc48-4c14-98ac-f2525380661c" finished successfully.
+WARNING: Your active project does not match the quota project in your local Application Default Credentials file. This might result in unexpected quota issues.
+
+To update your Application Default Credentials quota project, use the `gcloud auth application-default set-quota-project` command.
+Updated property [core/project].
+[SUCCESS] Active project set to: gemini-app-1766297450
+[ACTION REQUIRED] Linking Billing Account...
+Your available billing accounts:
+NAME                     ACCOUNT_ID            OPEN
+Cloud Rechnungskonto 1   016D4C-40AB2E-DCADB1  False
+Mein Rechnungskonto      017D3C-088A66-815D68  False
+Rechnungskonto-03012025  01CC60-1B7BD4-7E4F27  True
+-------------------------------------------------------
+Copy the 'ACCOUNT_ID' (the code like 0X0X0X-...) from above.
+Paste Billing Account ID here: 01CC60-1B7BD4-7E4F27
+billingAccountName: billingAccounts/01CC60-1B7BD4-7E4F27
+billingEnabled: true
+name: projects/gemini-app-1766297450/billingInfo
+projectId: gemini-app-1766297450
+[SUCCESS] Billing linked!
+[INFO] Enabling APIs (this takes 30-60s)...
+Operation "operations/acf.p2-1057191446230-d614c618-f429-49a1-9204-683615f0c13b" finished successfully.
+[SUCCESS] Project gemini-app-1766297450 is ready for deployment!
+chris@Framework-13:~/gcloud$ mkdir -p ~/gcloud/gemini-app
+cd ~/gcloud/gemini-app
+
+# 1. Create requirements.txt
+cat <<EOF > requirements.txt
+flask
+gunicorn
+google-generativeai
+EOF
+
+# 2. Create main.py (The Web Server Wrapper)
+cat <<EOF > main.py
+import os
+from flask import Flask, request, jsonify
+import google.generativeai as genai
+
+app = Flask(__name__)
+
+# --- CONFIGURATION ---
+# Get API key from environment variable (Best Practice)
+API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if not API_KEY:
+    print("WARNING: GEMINI_API_KEY not set!")
+echo "App files created in ~/gcloud/gemini-app"t(os.environ.get("PORT", 8080)))}
+App files created in ~/gcloud/gemini-app
+chris@Framework-13:~/gcloud/gemini-app$ cd ~/gcloud/gemini-app
+
+# 1. Enter your API Key (Input will be hidden)
+read -sp "Enter your Google AI Studio API Key: " GEMINI_KEY
+echo ""
+
+# 2. Deploy
+gcloud run deploy gemini-app \
+  --source . \
+  --region europe-west3 \
+  --allow-unauthenticated \
+  --set-env-vars GEMINI_API_KEY="$GEMINI_KEY"
+Enter your Google AI Studio API Key: 
+Deploying from source requires an Artifact Registry Docker repository to store 
+built containers. A repository named [cloud-run-source-deploy] in region 
+[europe-west3] will be created.
+
+Do you want to continue (Y/n)?  
+
+Building using Buildpacks and deploying container to Cloud Run service [gemini-app] in project [gemini-app-1766297450] region [europe-west3]
+✓ Building and deploying new service... Done.                                  
+  ✓ Creating Container Repository...                                           
+  ✓ Validating Service...                                                      
+  ✓ Uploading sources...                                                       
+  ✓ Building Container... Logs are available at [https://console.cloud.google.c
+  om/cloud-build/builds;region=europe-west3/24b8cdbe-dc5f-4617-bb00-a7191846b17
+  8?project=1057191446230].                                                    
+  ✓ Creating Revision...                                                       
+  ✓ Routing traffic...                                                         
+  ✓ Setting IAM Policy...                                                      
+Done.                                                                          
+Service [gemini-app] revision [gemini-app-00001-gbz] has been deployed and is serving 100 percent of traffic.
+Service URL: https://gemini-app-1057191446230.europe-west3.run.app
+chris@Framework-13:~/gcloud/gemini-app$ curl -X POST https://gemini-app-1057191446230.europe-west3.run.app \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Write a haiku about a Linux laptop."}'
+{"response":"Error: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods."}
+chris@Framework-13:~/gcloud/gemini-app$ cd ~/gcloud/gemini-app
+
+# 1. Overwrite main.py with the stable 'gemini-pro' model
+cat <<EOF > main.py
+import os
+from flask import Flask, request, jsonify
+import google.generativeai as genai
+
+app = Flask(__name__)
+
+# --- CONFIGURATION ---
+API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if not API_KEY:
+    print("WARNING: GEMINI_API_KEY not set!")
+else:
+    genai.configure(api_key=API_KEY)
+
+# --- YOUR AI STUDIO LOGIC ---
+def get_gemini_response(prompt_input):
+    try:
+        # SWITCHED TO STABLE MODEL: 'gemini-pro'
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt_input)
+  --set-env-vars GEMINI_API_KEY="$GEMINI_KEY" again: " GEMINI_KEYPORT", 8080)))'
+
+Enter your Google AI Studio API Key again: 
+Redeploying with fix...
+Building using Buildpacks and deploying container to Cloud Run service [gemini-app] in project [gemini-app-1766297450] region [europe-west3]
+✓ Building and deploying... Done.                                              
+  ✓ Validating Service...                                                      
+  ✓ Uploading sources...                                                       
+  ✓ Building Container... Logs are available at [https://console.cloud.google.c
+  om/cloud-build/builds;region=europe-west3/c4e9b838-bc6f-4865-bec2-9ef7837c729
+  6?project=1057191446230].                                                    
+  ✓ Creating Revision...                                                       
+  ✓ Routing traffic...                                                         
+  ✓ Setting IAM Policy...                                                      
+Done.                                                                          
+Service [gemini-app] revision [gemini-app-00002-z4x] has been deployed and is serving 100 percent of traffic.
+Service URL: https://gemini-app-1057191446230.europe-west3.run.app
+chris@Framework-13:~/gcloud/gemini-app$ curl -X POST https://gemini-app-1057191446230.europe-west3.run.app \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Explain in one sentence why Linux is great for developers."}'
+{"response":"Error: 404 models/gemini-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods."}
+chris@Framework-13:~/gcloud/gemini-app$ cd ~/gcloud/gemini-app
+
+# 1. Export your key locally (so the script can use it)
+read -sp "Paste your API Key again for the check: " MY_KEY
+export GEMINI_API_KEY="$MY_KEY"
+echo ""
+
+# 2. Run the discovery script
+python3 -c "
+import google.generativeai as genai
+import os
+
+key = os.environ.get('GEMINI_API_KEY')
+if not key:
+    print('Error: No API Key found in environment.')
+    exit(1)
+
+genai.configure(api_key=key)
+
+print('\n--- AVAILABLE MODELS ---')
+try:
+    found = False
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+"rint('------------------------\n')! Your key might be restricted.')
+Paste your API Key again for the check: 
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+ModuleNotFoundError: No module named 'google'
+chris@Framework-13:~/gcloud/gemini-app$ import google.generativeai as genai
+
+cat <<EOF > check_models.py
+import google.generativeai as genai
+import os
+
+key = os.environ.get('GEMINI_API_KEY')
+if not key:
+    print("Error: GEMINI_API_KEY is not set.")
+    exit(1)
+
+genai.configure(api_key=key)
+
+print(f"\n{'MODEL NAME':<30} | {'STATUS'}")
+print("-" * 50)
+
+try:
+    found = False
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(f"{m.name:<30} | OK")
+            found = True
+    if not found:
+        print("No chat models found. Your API key might be invalid or restricted.")
+except Exception as e:
+    print(f"Connection Error: {e}")
+print("-" * 50 + "\n")
+EOF
+
+^Cchris@Framework-13:~/gcloud/gemini-app$ ls -1
+check_models.py
+debug_models.py
+main.py
+requirements.txt
+chris@Framework-13:~/gcloud/gemini-app$ ./script.sh 
+Creating virtual environment...
+Installing libraries...
+Collecting flask (from -r requirements.txt (line 1))
+  Downloading flask-3.1.2-py3-none-any.whl.metadata (3.2 kB)
+Collecting gunicorn (from -r requirements.txt (line 2))
+  Downloading gunicorn-23.0.0-py3-none-any.whl.metadata (4.4 kB)
+Collecting google-generativeai (from -r requirements.txt (line 3))
+  Downloading google_generativeai-0.8.6-py3-none-any.whl.metadata (3.9 kB)
+Collecting blinker>=1.9.0 (from flask->-r requirements.txt (line 1))
+  Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+Collecting click>=8.1.3 (from flask->-r requirements.txt (line 1))
+  Using cached click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+Collecting itsdangerous>=2.2.0 (from flask->-r requirements.txt (line 1))
+  Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+Collecting jinja2>=3.1.2 (from flask->-r requirements.txt (line 1))
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting markupsafe>=2.1.1 (from flask->-r requirements.txt (line 1))
+  Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+Collecting werkzeug>=3.1.0 (from flask->-r requirements.txt (line 1))
+  Downloading werkzeug-3.1.4-py3-none-any.whl.metadata (4.0 kB)
+Collecting packaging (from gunicorn->-r requirements.txt (line 2))
+  Using cached packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting google-ai-generativelanguage==0.6.15 (from google-generativeai->-r requirements.txt (line 3))
+  Downloading google_ai_generativelanguage-0.6.15-py3-none-any.whl.metadata (5.7 kB)
+Collecting google-api-core (from google-generativeai->-r requirements.txt (line 3))
+  Downloading google_api_core-2.28.1-py3-none-any.whl.metadata (3.3 kB)
+Collecting google-api-python-client (from google-generativeai->-r requirements.txt (line 3))
+  Downloading google_api_python_client-2.187.0-py3-none-any.whl.metadata (7.0 kB)
+Collecting google-auth>=2.15.0 (from google-generativeai->-r requirements.txt (line 3))
+  Downloading google_auth-2.45.0-py2.py3-none-any.whl.metadata (6.8 kB)
+Collecting protobuf (from google-generativeai->-r requirements.txt (line 3))
+  Downloading protobuf-6.33.2-cp39-abi3-manylinux2014_x86_64.whl.metadata (593 bytes)
+Collecting pydantic (from google-generativeai->-r requirements.txt (line 3))
+  Using cached pydantic-2.12.5-py3-none-any.whl.metadata (90 kB)
+Collecting tqdm (from google-generativeai->-r requirements.txt (line 3))
+  Using cached tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting typing-extensions (from google-generativeai->-r requirements.txt (line 3))
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting proto-plus<2.0.0dev,>=1.22.3 (from google-ai-generativelanguage==0.6.15->google-generativeai->-r requirements.txt (line 3))
+  Downloading proto_plus-1.27.0-py3-none-any.whl.metadata (2.2 kB)
+Collecting protobuf (from google-generativeai->-r requirements.txt (line 3))
+  Downloading protobuf-5.29.5-cp38-abi3-manylinux2014_x86_64.whl.metadata (592 bytes)
+Collecting googleapis-common-protos<2.0.0,>=1.56.2 (from google-api-core->google-generativeai->-r requirements.txt (line 3))
+  Downloading googleapis_common_protos-1.72.0-py3-none-any.whl.metadata (9.4 kB)
+Collecting requests<3.0.0,>=2.18.0 (from google-api-core->google-generativeai->-r requirements.txt (line 3))
+  Using cached requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting cachetools<7.0,>=2.0.0 (from google-auth>=2.15.0->google-generativeai->-r requirements.txt (line 3))
+  Downloading cachetools-6.2.4-py3-none-any.whl.metadata (5.6 kB)
+Collecting pyasn1-modules>=0.2.1 (from google-auth>=2.15.0->google-generativeai->-r requirements.txt (line 3))
+  Downloading pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting rsa<5,>=3.1.4 (from google-auth>=2.15.0->google-generativeai->-r requirements.txt (line 3))
+  Downloading rsa-4.9.1-py3-none-any.whl.metadata (5.6 kB)
+Collecting httplib2<1.0.0,>=0.19.0 (from google-api-python-client->google-generativeai->-r requirements.txt (line 3))
+  Downloading httplib2-0.31.0-py3-none-any.whl.metadata (2.2 kB)
+Collecting google-auth-httplib2<1.0.0,>=0.2.0 (from google-api-python-client->google-generativeai->-r requirements.txt (line 3))
+  Downloading google_auth_httplib2-0.3.0-py3-none-any.whl.metadata (3.1 kB)
+Collecting uritemplate<5,>=3.0.1 (from google-api-python-client->google-generativeai->-r requirements.txt (line 3))
+  Downloading uritemplate-4.2.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting annotated-types>=0.6.0 (from pydantic->google-generativeai->-r requirements.txt (line 3))
+  Using cached annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.41.5 (from pydantic->google-generativeai->-r requirements.txt (line 3))
+  Using cached pydantic_core-2.41.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.3 kB)
+Collecting typing-inspection>=0.4.2 (from pydantic->google-generativeai->-r requirements.txt (line 3))
+  Using cached typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+Collecting grpcio<2.0.0,>=1.33.2 (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.1->google-ai-generativelanguage==0.6.15->google-generativeai->-r requirements.txt (line 3))
+  Downloading grpcio-1.76.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.7 kB)
+Collecting grpcio-status<2.0.0,>=1.33.2 (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.1->google-ai-generativelanguage==0.6.15->google-generativeai->-r requirements.txt (line 3))
+  Downloading grpcio_status-1.76.0-py3-none-any.whl.metadata (1.1 kB)
+Collecting pyparsing<4,>=3.0.4 (from httplib2<1.0.0,>=0.19.0->google-api-python-client->google-generativeai->-r requirements.txt (line 3))
+  Using cached pyparsing-3.2.5-py3-none-any.whl.metadata (5.0 kB)
+Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth>=2.15.0->google-generativeai->-r requirements.txt (line 3))
+  Downloading pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+Collecting charset_normalizer<4,>=2 (from requests<3.0.0,>=2.18.0->google-api-core->google-generativeai->-r requirements.txt (line 3))
+  Using cached charset_normalizer-3.4.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+Collecting idna<4,>=2.5 (from requests<3.0.0,>=2.18.0->google-api-core->google-generativeai->-r requirements.txt (line 3))
+  Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting urllib3<3,>=1.21.1 (from requests<3.0.0,>=2.18.0->google-api-core->google-generativeai->-r requirements.txt (line 3))
+  Using cached urllib3-2.6.2-py3-none-any.whl.metadata (6.6 kB)
+Collecting certifi>=2017.4.17 (from requests<3.0.0,>=2.18.0->google-api-core->google-generativeai->-r requirements.txt (line 3))
+  Using cached certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+INFO: pip is looking at multiple versions of grpcio-status to determine which version is compatible with other requirements. This could take a while.
+Collecting grpcio-status<2.0.0,>=1.33.2 (from google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.1->google-ai-generativelanguage==0.6.15->google-generativeai->-r requirements.txt (line 3))
+  Downloading grpcio_status-1.75.1-py3-none-any.whl.metadata (1.1 kB)
+  Downloading grpcio_status-1.75.0-py3-none-any.whl.metadata (1.1 kB)
+  Downloading grpcio_status-1.74.0-py3-none-any.whl.metadata (1.1 kB)
+  Downloading grpcio_status-1.73.1-py3-none-any.whl.metadata (1.1 kB)
+  Downloading grpcio_status-1.73.0-py3-none-any.whl.metadata (1.1 kB)
+  Downloading grpcio_status-1.72.2-py3-none-any.whl.metadata (1.1 kB)
+  Downloading grpcio_status-1.72.1-py3-none-any.whl.metadata (1.1 kB)
+INFO: pip is still looking at multiple versions of grpcio-status to determine which version is compatible with other requirements. This could take a while.
+  Downloading grpcio_status-1.71.2-py3-none-any.whl.metadata (1.1 kB)
+Downloading flask-3.1.2-py3-none-any.whl (103 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.3/103.3 kB 2.2 MB/s eta 0:00:00
+Downloading gunicorn-23.0.0-py3-none-any.whl (85 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.0/85.0 kB 17.9 MB/s eta 0:00:00
+Downloading google_generativeai-0.8.6-py3-none-any.whl (155 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 155.1/155.1 kB 16.8 MB/s eta 0:00:00
+Downloading google_ai_generativelanguage-0.6.15-py3-none-any.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 13.7 MB/s eta 0:00:00
+Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+Using cached click-8.3.1-py3-none-any.whl (108 kB)
+Downloading google_api_core-2.28.1-py3-none-any.whl (173 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 173.7/173.7 kB 38.8 MB/s eta 0:00:00
+Downloading google_auth-2.45.0-py2.py3-none-any.whl (233 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 233.3/233.3 kB 35.4 MB/s eta 0:00:00
+Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 37.9 MB/s eta 0:00:00
+Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Downloading protobuf-5.29.5-cp38-abi3-manylinux2014_x86_64.whl (319 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 319.9/319.9 kB 46.8 MB/s eta 0:00:00
+Downloading werkzeug-3.1.4-py3-none-any.whl (224 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 225.0/225.0 kB 33.5 MB/s eta 0:00:00
+Downloading google_api_python_client-2.187.0-py3-none-any.whl (14.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.6/14.6 MB 42.1 MB/s eta 0:00:00
+Using cached packaging-25.0-py3-none-any.whl (66 kB)
+Using cached pydantic-2.12.5-py3-none-any.whl (463 kB)
+Using cached pydantic_core-2.41.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Using cached tqdm-4.67.1-py3-none-any.whl (78 kB)
+Using cached annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Downloading cachetools-6.2.4-py3-none-any.whl (11 kB)
+Downloading google_auth_httplib2-0.3.0-py3-none-any.whl (9.5 kB)
+Downloading googleapis_common_protos-1.72.0-py3-none-any.whl (297 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 297.5/297.5 kB 52.6 MB/s eta 0:00:00
+Downloading httplib2-0.31.0-py3-none-any.whl (91 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.1/91.1 kB 29.1 MB/s eta 0:00:00
+Downloading proto_plus-1.27.0-py3-none-any.whl (50 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.2/50.2 kB 20.4 MB/s eta 0:00:00
+Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 kB 41.2 MB/s eta 0:00:00
+Using cached requests-2.32.5-py3-none-any.whl (64 kB)
+Downloading rsa-4.9.1-py3-none-any.whl (34 kB)
+Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Downloading uritemplate-4.2.0-py3-none-any.whl (11 kB)
+Using cached certifi-2025.11.12-py3-none-any.whl (159 kB)
+Using cached charset_normalizer-3.4.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+Downloading grpcio-1.76.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (6.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 46.9 MB/s eta 0:00:00
+Downloading grpcio_status-1.71.2-py3-none-any.whl (14 kB)
+Using cached idna-3.11-py3-none-any.whl (71 kB)
+Downloading pyasn1-0.6.1-py3-none-any.whl (83 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.1/83.1 kB 29.3 MB/s eta 0:00:00
+Using cached pyparsing-3.2.5-py3-none-any.whl (113 kB)
+Using cached urllib3-2.6.2-py3-none-any.whl (131 kB)
+Installing collected packages: urllib3, uritemplate, typing-extensions, tqdm, pyparsing, pyasn1, protobuf, packaging, markupsafe, itsdangerous, idna, click, charset_normalizer, certifi, cachetools, blinker, annotated-types, werkzeug, typing-inspection, rsa, requests, pydantic-core, pyasn1-modules, proto-plus, jinja2, httplib2, gunicorn, grpcio, googleapis-common-protos, pydantic, grpcio-status, google-auth, flask, google-auth-httplib2, google-api-core, google-api-python-client, google-ai-generativelanguage, google-generativeai
+Successfully installed annotated-types-0.7.0 blinker-1.9.0 cachetools-6.2.4 certifi-2025.11.12 charset_normalizer-3.4.4 click-8.3.1 flask-3.1.2 google-ai-generativelanguage-0.6.15 google-api-core-2.28.1 google-api-python-client-2.187.0 google-auth-2.45.0 google-auth-httplib2-0.3.0 google-generativeai-0.8.6 googleapis-common-protos-1.72.0 grpcio-1.76.0 grpcio-status-1.71.2 gunicorn-23.0.0 httplib2-0.31.0 idna-3.11 itsdangerous-2.2.0 jinja2-3.1.6 markupsafe-3.0.3 packaging-25.0 proto-plus-1.27.0 protobuf-5.29.5 pyasn1-0.6.1 pyasn1-modules-0.4.2 pydantic-2.12.5 pydantic-core-2.41.5 pyparsing-3.2.5 requests-2.32.5 rsa-4.9.1 tqdm-4.67.1 typing-extensions-4.15.0 typing-inspection-0.4.2 uritemplate-4.2.0 urllib3-2.6.2 werkzeug-3.1.4
+---------------------------------------------------
+Paste API Key one last time to check models: 
+/home/chris/gcloud/gemini-app/check_models.py:1: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+
+MODEL NAME                     | STATUS
+--------------------------------------------------
+models/gemini-2.5-flash        | OK
+models/gemini-2.5-pro          | OK
+models/gemini-2.0-flash-exp    | OK
+models/gemini-2.0-flash        | OK
+models/gemini-2.0-flash-001    | OK
+models/gemini-2.0-flash-lite-001 | OK
+models/gemini-2.0-flash-lite   | OK
+models/gemini-2.0-flash-lite-preview-02-05 | OK
+models/gemini-2.0-flash-lite-preview | OK
+models/gemini-exp-1206         | OK
+models/gemini-2.5-flash-preview-tts | OK
+models/gemini-2.5-pro-preview-tts | OK
+models/gemma-3-1b-it           | OK
+models/gemma-3-4b-it           | OK
+models/gemma-3-12b-it          | OK
+models/gemma-3-27b-it          | OK
+models/gemma-3n-e4b-it         | OK
+models/gemma-3n-e2b-it         | OK
+models/gemini-flash-latest     | OK
+models/gemini-flash-lite-latest | OK
+models/gemini-pro-latest       | OK
+models/gemini-2.5-flash-lite   | OK
+models/gemini-2.5-flash-image-preview | OK
+models/gemini-2.5-flash-image  | OK
+models/gemini-2.5-flash-preview-09-2025 | OK
+models/gemini-2.5-flash-lite-preview-09-2025 | OK
+models/gemini-3-pro-preview    | OK
+models/gemini-3-flash-preview  | OK
+models/gemini-3-pro-image-preview | OK
+models/nano-banana-pro-preview | OK
+models/gemini-robotics-er-1.5-preview | OK
+models/gemini-2.5-computer-use-preview-10-2025 | OK
+models/deep-research-pro-preview-12-2025 | OK
+--------------------------------------------------
+
+chris@Framework-13:~/gcloud/gemini-app$ cd ~/gcloud/gemini-app
+
+# 1. Update main.py to use 'gemini-3-pro-preview'
+cat <<EOF > main.py
+import os
+import logging
+from flask import Flask, request, jsonify
+import google.generativeai as genai
+
+app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+
+API_KEY = os.environ.get("GEMINI_API_KEY")
+if not API_KEY:
+    logging.error("GEMINI_API_KEY not set!")
+else:
+    genai.configure(api_key=API_KEY)
+
+def get_gemini_response(prompt_input):
+    try:
+        # SPECIFICALLY REQUESTING GEMINI 3.0
+        target_model = 'gemini-3-pro-preview'
+        
+        logging.info(f"Requesting model: {target_model}")
+  --set-env-vars GEMINI_API_KEY="$GEMINI_KEY"EYt(os.environ.get("PORT", 8080)))
+Enter API Key to Deploy: 
+Building using Buildpacks and deploying container to Cloud Run service [gemini-app] in project [gemini-app-1766297450] region [europe-west3]
+✓ Building and deploying... Done.                                              
+  ✓ Validating Service...                                                      
+  ✓ Uploading sources...                                                       
+  ✓ Building Container... Logs are available at [https://console.cloud.google.c
+  om/cloud-build/builds;region=europe-west3/10781613-e4ff-40a9-adb0-aff489b18d2
+  d?project=1057191446230].                                                    
+  ✓ Creating Revision...                                                       
+  ✓ Routing traffic...                                                         
+  ✓ Setting IAM Policy...                                                      
+Done.                                                                          
+Service [gemini-app] revision [gemini-app-00003-tfc] has been deployed and is serving 100 percent of traffic.
+Service URL: https://gemini-app-1057191446230.europe-west3.run.app
+chris@Framework-13:~/gcloud/gemini-app$ cd ~/gcloud/gemini-app
+
+# 1. Activate the virtual environment
+source venv/bin/activate
+
+# 2. Ensure 'requests' is explicitly installed (dashboard.py needs it)
+pip install requests
+
+# 3. Run the dashboard
+python3 dashboard.py
+Requirement already satisfied: requests in ./venv/lib/python3.12/site-packages (2.32.5)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./venv/lib/python3.12/site-packages (from requests) (3.4.4)
+Requirement already satisfied: idna<4,>=2.5 in ./venv/lib/python3.12/site-packages (from requests) (3.11)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./venv/lib/python3.12/site-packages (from requests) (2.6.2)
+Requirement already satisfied: certifi>=2017.4.17 in ./venv/lib/python3.12/site-packages (from requests) (2025.11.12)
+
+============================================================
+   GEMINI APP LIVE DASHBOARD   
+============================================================
+
+[ SYSTEM CONFIGURATION ]
+Parameter            | Value
+--------------------------------------------------
+Service URL          | https://gemini-app-1057191446230.europe-west3.run.app
+Region               | europe-west3 (Frankfurt)
+Model Target         | gemini-3-pro-preview
+--------------------------------------------------
+
+[ PERFORMANCE TEST ]
+Sending probe: 'Explain quantum entanglement in 5 words.'...
+
+Metric               | Result
+--------------------------------------------------
+Status               | ✅ ONLINE
+Latency              | 21.3 seconds
+Response Payload     | Instant connection across any distance.
+--------------------------------------------------
+
+============================================================
+
+(venv) chris@Framework-13:~/gcloud/gemini-app$ ./initialize_git.sh 
+(venv) chris@Framework-13:~/gcloud/gemini-app$ ./initialize_git.sh 
+Initialized empty Git repository in /home/chris/gcloud/gemini-app/.git/
+[main (root-commit) debdc33] Initial commit: Gemini 3.0 App on Cloud Run
+ 8 files changed, 200 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 check_models.py
+ create mode 100644 dashboard.py
+ create mode 100644 debug_models.py
+ create mode 100755 initialize_git.sh
+ create mode 100644 main.py
+ create mode 100644 requirements.txt
+ create mode 100755 script.sh
+✅ Git repository initialized and code saved locally.
+(venv) chris@Framework-13:~/gcloud/gemini-app$ gh auth status
+github.com
+  ✓ Logged in to github.com account kngms (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'admin:enterprise', 'admin:gpg_key', 'admin:org', 'admin:org_hook', 'admin:public_key', 'admin:repo_hook', 'admin:ssh_signing_key', 'audit_log', 'codespace', 'copilot', 'delete:packages', 'delete_repo', 'gist', 'notifications', 'project', 'repo', 'user', 'workflow', 'write:discussion', 'write:network_configurations', 'write:packages'
+(venv) chris@Framework-13:~/gcloud/gemini-app$ ./push_to_git.sh 
+[main f66e254] Add project documentation
+ 1 file changed, 31 insertions(+)
+ create mode 100644 README.md
+Creating GitHub repository...
+✓ Created repository kngms/gemini-cloud-app on GitHub
+  https://github.com/kngms/gemini-cloud-app
+✓ Added remote https://github.com/kngms/gemini-cloud-app.git
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Delta compression using up to 18 threads
+Compressing objects: 100% (11/11), done.
+Writing objects: 100% (13/13), 3.98 KiB | 3.98 MiB/s, done.
+Total 13 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), done.
+To https://github.com/kngms/gemini-cloud-app.git
+ * [new branch]      HEAD -> main
+branch 'main' set up to track 'origin/main'.
+✓ Pushed commits to https://github.com/kngms/gemini-cloud-app.git
+
+✅ SUCCESS! Your code is now live on GitHub.
+View it here: https://github.com/kngms/gemini-cloud-app
+(venv) chris@Framework-13:~/gcloud/gemini-app$ 
+
